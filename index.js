@@ -60,6 +60,16 @@ app.shortcut("check_timestamps", async ({ shortcut, ack, respond }) => {
 		await ack(); // Acknowledge shortcut request
 		// get timezone matches from within the message
 		let tzMatches = getMatches(shortcut.message.text);
+		//check for potentially no matches
+		if (tzMatches.length === 0) {
+			await app.client.chat.postEphemeral({
+				token: process.env.SLACK_OAUTH_TOKEN,
+				text: `No timestamps found! If you think this is in error, reach out to <@UE8DH0UHM>.`,
+				channel: shortcut.channel.id,
+				thread_ts: shortcut.message.ts
+			});
+			return;
+		}
 		// initialize array of timestamps
 		let unixTimestamps = [];
 		// translate timestamps into unix time
