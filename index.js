@@ -5,7 +5,6 @@ const chrono = require("chrono-node");
 //univeral shit
 const MINUTES_IN_HOUR = 60;
 const MS_IN_SECOND = 1000;
-const TIME_REGEX = /[(\s-/]([0-9]{1,2}(?:\:[0-9]{2})?[\s]?(?:AM|PM)?[\s]?(?:[A-z]{1,3}[Tt])?)[\s-/).!]/g;
 
 const app = new App({
 	token: process.env.SLACK_OAUTH_TOKEN,
