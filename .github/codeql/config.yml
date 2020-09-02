@@ -1,0 +1,4 @@
+name: "CodeQL Conf"
+
+queries:
+  - uses: security-and-quality
