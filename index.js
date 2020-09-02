@@ -66,7 +66,8 @@ app.shortcut("check_timestamps", async ({ shortcut, ack, respond }) => {
 				token: process.env.SLACK_OAUTH_TOKEN,
 				text: `No timestamps found! If you think this is in error, reach out to <@UE8DH0UHM>.`,
 				channel: shortcut.channel.id,
-				thread_ts: shortcut.message.ts
+				thread_ts: shortcut.message.ts,
+				user: shortcut.user.id
 			});
 			return;
 		}
