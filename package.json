@@ -1,0 +1,19 @@
+{
+  "name": "slack-time-translate",
+  "version": "1.0.0",
+  "description": "Translates times in slack with a message shortcut",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "author": "lukec11 <me@lukec.me>",
+  "license": "MIT",
+  "dependencies": {
+    "@slack/bolt": "^2.3.0",
+    "chrono-node": "^2.1.8",
+    "dotenv": "^8.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
