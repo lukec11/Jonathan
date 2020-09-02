@@ -18,9 +18,9 @@ const getSlackOffset = async userId => {
 			token: process.env.SLACK_OAUTH_TOKEN,
 			user: userId
 		})
-	).user.tz_offset;
-	// slack provides offset in minutes, we want it in hours.
-	return userTzOffset / MINUTES_IN_HOUR;
+	).user.tz_label
+
+	return userTzOffset;
 };
 
 const getMatches = (message) => {
@@ -42,12 +42,11 @@ const parseDate = async (dateString, userId) => {
 		if (
 			!initialParse[0].start.knownValues.hasOwnProperty("timezoneOffset")
 		) {
-			// The timezone property isn't provided, so we need to grab the slack offset and add it on.
-			// Will return the time in seconds instead of ms
+			// The timezone property isn't provided, so we need to grab the slack timezone and add it on
 			const slackOffset = await getSlackOffset(userId);
-			dateString += ` TZ${slackOffset}`;
+			dateString += ` ${slackOffset}`;
 		}
-		// it doesn't have a timezone
+		// it already has a timezone applied
 		return (chrono.parseDate(dateString).getTime() / MS_IN_SECOND).toFixed(0);
 	} catch (err) {
 		console.error(err);
