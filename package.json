@@ -4,7 +4,7 @@
   "description": "Translates times in slack with a message shortcut",
   "main": "index.js",
   "scripts": {
-    "test": "node index.js"
+    "start": "node index.js"
   },
   "author": "lukec11 <me@lukec.me>",
   "license": "MIT",
