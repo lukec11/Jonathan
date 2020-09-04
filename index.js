@@ -11,6 +11,8 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
+const blocks = require('./blocks.js');
+
 /**
  * Escape Slack message to prevent ping injection and double pings
  *
@@ -100,7 +102,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       Number(shortcut.message.ts.split('.')[0]) * 1000
     );
 
-    // escape the original message to prevent slack ping injection / double pings
+    // escape the original message to prevent SPI / double mentions for subteams
     const originalMessage = escapeMessage(shortcut.message.text);
 
     // get timezone matches from within the message
@@ -144,47 +146,15 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
           convertedMessage.replace(/^|\n/g, '\n>')
       });
     } else {
-      await app.client.views.open({
-        // The token you used to initialize your app is stored in the `context` object
-        token: context.botToken,
-        trigger_id: payload.trigger_id,
-        view: {
-          type: 'modal',
-          title: {
-            type: 'plain_text',
-            text: 'Jonathan'
-          },
-          blocks: [
-            {
-              type: 'header',
-              text: {
-                type: 'plain_text',
-                text: "Here's that post in your timezone:",
-                emoji: true
-              }
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: convertedMessage
-              }
-            },
-            {
-              type: 'divider'
-            },
-            {
-              type: 'context',
-              elements: [
-                {
-                  type: 'mrkdwn',
-                  text: `\n\nBy the way, you should ask <@${shortcut.message.user}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
-                }
-              ]
-            }
-          ]
-        }
-      });
+      await app.client.views.open(
+        blocks.messageModal({
+          // The token you used to initialize your app is stored in the `context` object
+          token: context.bot_token,
+          trigger_id: trigger_id,
+          text: message,
+          origuser: shortcut.user.id
+        })
+      );
     }
     //send response message
   } catch (err) {
