@@ -155,6 +155,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         token: context.botToken,
         trigger_id: payload.trigger_id,
         view: {
+          type: 'modal',
           title: {
             type: 'plain_text',
             text: 'Jonathan, timezone robot'
