@@ -1,11 +1,9 @@
 require('dotenv').config()
 const { App } = require('@slack/bolt')
 const chrono = require('chrono-node')
-const Honeybadger = require('honeybadger-js')
 
-Honeybadger.configure({
-  apiKey: process.env.HONEYBADGER_API_KEY,
-  environment: process.env.NODE_ENV || 'development'
+const Honeybadger = require('honeybadger').configure({
+  apiKey: process.env.HONEYBADGER_API_KEY
 })
 
 const app = new App({
