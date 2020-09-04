@@ -140,20 +140,32 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
       convertedMessage.replace(/\n/g, '\n>') +
       `\n\n(requested by <@${shortcut.user.id}>)`
 
+    //check if shortcut runner is original messager
+    if (shortcut.message.user === shortcut.user.id) {
+      //show in thread with full visibility
+      await app.client.chat.postMessage({
+        token: process.env.SLACK_OAUTH_TOKEN,
+        channel: shortcut.channel.id,
+        text: message,
+        thread_ts: shortcut.message.ts
+      })
+    } else {
+      //not the original user - show ephemerally instead
+      await app.client.chat.postEphemeral({
+        token: process.env.SLACK_OAUTH_TOKEN,
+        channel: shortcut.channel.id,
+        text: message,
+        thread_ts: shortcut.message.ts,
+        user: shortcut.user.id
+      })
+    }
     //send response message
-    await app.client.chat.postMessage({
-      token: process.env.SLACK_OAUTH_TOKEN,
-      channel: shortcut.channel.id,
-      text: message,
-      thread_ts: shortcut.message.ts
-    })
   } catch (err) {
     console.error(err)
   } finally {
     await ack() // Acknowledge shortcut request
   }
 })
-
 ;(async () => {
   await app.start(3000)
   console.log('online')
