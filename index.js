@@ -37,6 +37,9 @@ function localizeDate(date, fallbackText) {
 
 	// link to time.is for conversion to other timezones
 	const linkToTime = `https://time.is/${timestamp}`;
+	
+	// Further escape fallback text to prevent glitches with multiline or oddly formatted text
+	fallbackText = fallbackText.replace(/\n|\^|\|/g, " ");
 
 	// make a localized date string
 	const localizedStr = `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>\n`;
