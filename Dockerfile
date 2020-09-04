@@ -11,6 +11,7 @@ ADD . /app
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+ENV NODE_ENV=production
 
 # Installing the project dependencies
 RUN npm install

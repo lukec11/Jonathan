@@ -1,6 +1,12 @@
 require('dotenv').config()
 const { App } = require('@slack/bolt')
 const chrono = require('chrono-node')
+const Honeybadger = require('honeybadger-js')
+
+Honeybadger.configure({
+  apiKey: process.env.HONEYBADGER_API_KEY,
+  environment: process.env.NODE_ENV || 'development'
+})
 
 const app = new App({
   token: process.env.SLACK_OAUTH_TOKEN,
@@ -95,7 +101,12 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
 
 //listen for shortcut
 app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
+  let timeMatches
+
   try {
+    if (shortcut.message.text == 'Abort, Jonathan.')
+      throw new Error('Was told to abort.')
+
     // convert Slack's message timestamp to a Date object;
     const messageTime = new Date(
       Number(shortcut.message.ts.split('.')[0]) * 1000
@@ -105,7 +116,7 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
     const originalMessage = escapeMessage(shortcut.message.text)
 
     // get timezone matches from within the message
-    const timeMatches = chrono.parse(originalMessage, messageTime)
+    timeMatches = chrono.parse(originalMessage, messageTime)
 
     //check for potentially no matches
     if (timeMatches.length === 0) {
@@ -162,6 +173,18 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
     //send response message
   } catch (err) {
     console.error(err)
+
+    Honeybadger.notify(err, {
+      context: {
+        timeMatches,
+        message: {
+          ts: shortcut.message.ts,
+          text: shortcut.message.text
+        },
+        channelId: shortcut.channel.id,
+        userId: shortcut.user.id
+      }
+    })
   } finally {
     await ack() // Acknowledge shortcut request
   }
