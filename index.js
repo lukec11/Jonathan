@@ -147,8 +147,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         thread_ts: shortcut.message.ts,
         text:
           `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
-          convertedMessage +
-          '\n\n<https://github.com/lukec11/Jonathan|How does this work?>.'
+          convertedMessage
       });
     } else {
       await app.client.views.open({
