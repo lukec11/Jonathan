@@ -136,7 +136,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       originalMessage,
       timeMatches,
       timezoneOffset
-    ).replace(/^|\n/g, '\n>');
+    );
 
     //check if shortcut runner is original messager
     if (shortcut.message.user === shortcut.user.id) {
@@ -147,7 +147,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         thread_ts: shortcut.message.ts,
         text:
           `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
-          convertedMessage
+          convertedMessage.replace(/^|\n/g, '\n>')
       });
     } else {
       await app.client.views.open({
@@ -175,6 +175,9 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
                 type: 'mrkdwn',
                 text: convertedMessage
               }
+            },
+            {
+              type: 'divider'
             },
             {
               type: 'context',
