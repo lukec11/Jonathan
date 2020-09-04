@@ -2,99 +2,146 @@ require("dotenv").config();
 const { App } = require("@slack/bolt");
 const chrono = require("chrono-node");
 
-//univeral shit
-const MINUTES_IN_HOUR = 60;
-const MS_IN_SECOND = 1000;
-
 const app = new App({
 	token: process.env.SLACK_OAUTH_TOKEN,
 	signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
-const getSlackOffset = async userId => {
-	const userTzOffset = (
-		await app.client.users.info({
-			token: process.env.SLACK_OAUTH_TOKEN,
-			user: userId
-		})
-	).user.tz_label
-
-	return userTzOffset;
-};
-
-const getMatches = (message) => {
-	const times = chrono.parse(message);
-	let textMatches = [];
-	for (const t of times) {
-		textMatches.push(t.text);
-		console.log(`found match ${t.text}`)
-	}
-	return textMatches;
+/** 
+ * Escape Slack message to prevent ping injection and double pings
+ * 
+ * @param {string} text to escape
+ * @returns {string} the escaped text
+ */
+function escapeMessage(text) {
+	return text
+		// more user-friendly text replacements:
+		.replace(/<@[^>]*>/g, "user")
+		.replace(/<!(subteam)[^>]*>/g, "group")
+		// now, escape all user text according to the guide https://api.slack.com/reference/surfaces/formatting#escaping
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
 }
 
-const parseDate = async (dateString, userId) => {
-	try {
-		let date = "";
+/**
+ * Localize a date for display in Slack
+ * 
+ * @param {Date} date 
+ * @param {string} fallbackText
+ * @returns {string} The localized date for display in Slack
+ */
+function localizeDate(date, fallbackText) {
+	// convert date to a timestamp
+	const timestamp = (date.getTime() / 1000).toFixed(0);
 
-		//check to see the properties of the initial parse
-		const initialParse = chrono.parse(dateString);
-		if (
-			!initialParse[0].start.knownValues.hasOwnProperty("timezoneOffset")
-		) {
-			// The timezone property isn't provided, so we need to grab the slack timezone and add it on
-			const slackOffset = await getSlackOffset(userId);
-			dateString += ` ${slackOffset}`;
+	// link to time.is for conversion to other timezones
+	const linkToTime = `https://time.is/${timestamp}`;
+
+	// make a localized date string
+	const localizedStr = `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>\n`;
+
+	return localizedStr;
+}
+
+/** 
+ * Localize a message's times
+ * 
+ * @param {string} originalMessage
+ * @param {any[]} timeMatches
+ * @param {number} timezoneOffsetMinutes The timezone offset of the user, in minutes
+ * @returns {string}
+ */
+function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
+	let convertedMessage = "";
+	let convertedToIndex = 0;
+
+	timeMatches.forEach((match) => {
+		// append the text between the last match and this match
+		convertedMessage += originalMessage.slice(convertedToIndex, match.index);
+		convertedToIndex = match.index + match.text.length;
+
+
+		// If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
+		if(!match.start.impliedValues.hasOwnProperty("timezoneOffset")) {
+			// Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
+			match.start.impliedValues.timezoneOffset = timezoneOffset
 		}
-		// it already has a timezone applied
-		return (chrono.parseDate(dateString).getTime() / MS_IN_SECOND).toFixed(0);
-	} catch (err) {
-		console.error(err);
-	}
-};
+
+		// insert in the converted message
+		convertedMessage += localizeDate(match.start.date(), match.text);
+
+
+		if(match.end != null) {
+			// If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
+			if(!match.end.impliedValues.hasOwnProperty("timezoneOffset")) {
+				// Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
+				match.end.impliedValues.timezoneOffset = timezoneOffset
+			}
+
+			// insert in the converted message
+			convertedMessage += " to " + localizeDate(match.end.date(), "end time");
+		}
+	});
+
+	// make sure to append any text after the last date match
+	convertedMessage += originalMessage.slice(convertedToIndex);
+
+	return convertedMessage;
+}
 
 //listen for shortcut
-app.shortcut("check_timestamps", async ({ shortcut, ack, respond }) => {
+app.shortcut("check_timestamps", async ({ shortcut, ack }) => {
 	try {
-		await ack(); // Acknowledge shortcut request
+		// convert Slack's message timestamp to a Date object;
+		const messageTime = new Date(Number(shortcut.message.ts.split(".")[0]) * 1000);
+
+		// escape the original message to prevent slack ping injection / double pings
+		const originalMessage = escapeMessage(shortcut.message.text);
+
 		// get timezone matches from within the message
-		let tzMatches = getMatches(shortcut.message.text);
+		const timeMatches = chrono.parse(originalMessage, messageTime);
+
 		//check for potentially no matches
-		if (tzMatches.length === 0) {
-			await app.client.chat.postEphemeral({
+		if (timeMatches.length === 0) {
+			return app.client.chat.postEphemeral({
 				token: process.env.SLACK_OAUTH_TOKEN,
 				text: `No timestamps found! If you think this is in error, reach out to <@UE8DH0UHM>.`,
 				channel: shortcut.channel.id,
 				thread_ts: shortcut.message.ts,
 				user: shortcut.user.id
 			});
-			return;
 		}
-		// initialize array of timestamps
-		let unixTimestamps = [];
-		// translate timestamps into unix time
-		for (const i of tzMatches) {
-			let m = await parseDate(i, shortcut.user.id);
-			unixTimestamps.push(m);
-		}
-		
-		//generate final text to send
-		let finalSend = "";
-		// Add user callout at beginning
-		finalSend += `Here are the posts's timestamps in your local time! (requested by <@${shortcut.user.id}>)\n\n`;
-		for (let i = 0; i < tzMatches.length; i++) {
-			finalSend += `\`"${tzMatches[i].trim()}"\`: <!date^${
-				unixTimestamps[i]
-			}^{date_short_pretty} at {time}|time>\n`;
-		}
+
+		// Most of the time, a user will not provide a timezone in their message, so we'll hold it to simplify the base case.
+		const originalPoster = await app.client.users.info({
+			token: process.env.SLACK_OAUTH_TOKEN,
+			user: userId
+		});
+
+		// we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
+		const timezoneOffset = originalPoster.user.tz_offset / 60;
+
+		const convertedMessage = localizeMessageTimes(shortcut.message.text, timeMatches, timezoneOffset);
+
+		// generate final text to send
+		const message = (
+			`Here is <@${shortcut.message.user}'s> post in your local timezone: \n\n` +
+			">" + convertedMessage.replace(/\n/g, "\n>") +
+			`\n\n(requested by <@${shortcut.user.id}>)`
+		);
+
 		//send response message
 		await app.client.chat.postMessage({
 			token: process.env.SLACK_OAUTH_TOKEN,
 			channel: shortcut.channel.id,
-			text: finalSend,
+			text: message,
 			thread_ts: shortcut.message.ts
 		});
 	} catch (err) {
 		console.error(err);
+	} finally {
+		await ack(); // Acknowledge shortcut request
 	}
 });
 
