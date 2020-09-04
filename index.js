@@ -186,18 +186,25 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
   } catch (err) {
     console.error(err);
 
-    Honeybadger.notify(err, {
-      context: {
-        timeMatches,
-        message: {
-          ts: shortcut.message.ts,
-          text: shortcut.message.text
-        },
-        channelId: shortcut.channel.id,
-        userId: shortcut.user.id,
-        teamId: shortcut.team.id
+    // Extract details of the error which are not stack or message
+    const { stack, code, message, ...error_details } = err;
+
+    Honeybadger.notify(
+      { stack, code, message },
+      {
+        context: {
+          timeMatches,
+          message: {
+            ts: shortcut.message.ts,
+            text: shortcut.message.text
+          },
+          channelId: shortcut.channel.id,
+          userId: shortcut.user.id,
+          teamId: shortcut.team.id,
+          error_details
+        }
       }
-    });
+    );
   } finally {
     await ack(); // Acknowledge shortcut request
   }
