@@ -10,7 +10,7 @@ Meet Jonathan, the solution to your remote scheduling woes.
 
 ## Demo
 
-![Jonathan showing a modal](/examples/modal.png)
+![Jonathan showing a modal](/examples/modal-shortened-title.png)
 ![Jonathan replying in-thread](/examples/reply-ben.png)
 ![Jonathan replying in-thread, dark mode](/examples/dark-mode.png)
 
