@@ -136,7 +136,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       originalMessage,
       timeMatches,
       timezoneOffset
-    );
+    ).replace(/^|\n/g, '\n>');
 
     //check if shortcut runner is original messager
     if (shortcut.message.user === shortcut.user.id) {
@@ -147,7 +147,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         thread_ts: shortcut.message.ts,
         text:
           `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
-          convertedMessage.replace(/^|\n/g, '\n>')
+          convertedMessage
       });
     } else {
       await app.client.views.open({
@@ -177,13 +177,10 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
               }
             },
             {
-              type: 'divider'
-            },
-            {
               type: 'section',
               text: {
                 type: 'mrkdwn',
-                text: `FYI, <@${shortcut.message.user}> is in ${originalPoster.user.tz_label}. You should tell them to trigger this shortcut on their own message so that I can magically convert the times for everyone.`
+                text: `\n\nBy the way, you should ask <@${shortcut.message.user}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
               }
             }
           ]
