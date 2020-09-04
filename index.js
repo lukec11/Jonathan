@@ -177,11 +177,13 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
               }
             },
             {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: `\n\nBy the way, you should ask <@${shortcut.message.user}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
-              }
+              type: 'context',
+              elements: [
+                {
+                  type: 'mrkdwn',
+                  text: `\n\nBy the way, you should ask <@${shortcut.message.user}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
+                }
+              ]
             }
           ]
         }
