@@ -154,7 +154,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
           type: 'modal',
           title: {
             type: 'plain_text',
-            text: 'Jonathan, timezone robot'
+            text: 'Jonathan'
           },
           blocks: [
             {
