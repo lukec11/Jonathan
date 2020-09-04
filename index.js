@@ -44,9 +44,7 @@ function localizeDate(date, fallbackText) {
   fallbackText = fallbackText.replace(/\n|\^|\|/g, ' ');
 
   // make a localized date string
-  const localizedStr = `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>\n`;
-
-  return localizedStr;
+  return `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>`;
 }
 
 /**
