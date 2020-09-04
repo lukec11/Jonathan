@@ -20,13 +20,9 @@ const app = new App({
 function escapeMessage(text) {
   return (
     text
-      // more user-friendly text replacements:
-      .replace(/<@[^>]*>/g, 'user')
-      .replace(/<!(subteam)[^>]*>/g, 'group')
       // now, escape all user text according to the guide https://api.slack.com/reference/surfaces/formatting#escaping
       .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
+      .replace(/<\s*![^>]*)>/g, 'group')
   );
 }
 
