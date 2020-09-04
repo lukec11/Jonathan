@@ -1,15 +1,15 @@
-require('dotenv').config()
-const { App } = require('@slack/bolt')
-const chrono = require('chrono-node')
+require('dotenv').config();
+const { App } = require('@slack/bolt');
+const chrono = require('chrono-node');
 
 const Honeybadger = require('honeybadger').configure({
   apiKey: process.env.HONEYBADGER_API_KEY
-})
+});
 
 const app = new App({
   token: process.env.SLACK_OAUTH_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET
-})
+});
 
 /**
  * Escape Slack message to prevent ping injection and double pings
@@ -27,7 +27,7 @@ function escapeMessage(text) {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-  )
+  );
 }
 
 /**
@@ -39,18 +39,18 @@ function escapeMessage(text) {
  */
 function localizeDate(date, fallbackText) {
   // convert date to a timestamp
-  const timestamp = (date.getTime() / 1000).toFixed(0)
+  const timestamp = (date.getTime() / 1000).toFixed(0);
 
   // link to time.is for conversion to other timezones
-  const linkToTime = `https://time.is/${timestamp}`
+  const linkToTime = `https://time.is/${timestamp}`;
 
   // Further escape fallback text to prevent glitches with multiline or oddly formatted text
-  fallbackText = fallbackText.replace(/\n|\^|\|/g, ' ')
+  fallbackText = fallbackText.replace(/\n|\^|\|/g, ' ');
 
   // make a localized date string
-  const localizedStr = `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>\n`
+  const localizedStr = `<!date^${timestamp}^{date_short_pretty} at {time}^${linkToTime}|${fallbackText}>\n`;
 
-  return localizedStr
+  return localizedStr;
 }
 
 /**
@@ -62,58 +62,58 @@ function localizeDate(date, fallbackText) {
  * @returns {string}
  */
 function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
-  let convertedMessage = ''
-  let convertedToIndex = 0
+  let convertedMessage = '';
+  let convertedToIndex = 0;
 
   timeMatches.forEach(match => {
     // append the text between the last match and this match
-    convertedMessage += originalMessage.slice(convertedToIndex, match.index)
-    convertedToIndex = match.index + match.text.length
+    convertedMessage += originalMessage.slice(convertedToIndex, match.index);
+    convertedToIndex = match.index + match.text.length;
 
     // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
     if (!match.start.impliedValues.hasOwnProperty('timezoneOffset')) {
       // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
-      match.start.impliedValues.timezoneOffset = timezoneOffset
+      match.start.impliedValues.timezoneOffset = timezoneOffset;
     }
 
     // insert in the converted message
-    convertedMessage += localizeDate(match.start.date(), match.text)
+    convertedMessage += localizeDate(match.start.date(), match.text);
 
     if (match.end != null) {
       // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
       if (!match.end.impliedValues.hasOwnProperty('timezoneOffset')) {
         // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
-        match.end.impliedValues.timezoneOffset = timezoneOffset
+        match.end.impliedValues.timezoneOffset = timezoneOffset;
       }
 
       // insert in the converted message
-      convertedMessage += ' to ' + localizeDate(match.end.date(), 'end time')
+      convertedMessage += ' to ' + localizeDate(match.end.date(), 'end time');
     }
-  })
+  });
 
   // make sure to append any text after the last date match
-  convertedMessage += originalMessage.slice(convertedToIndex)
+  convertedMessage += originalMessage.slice(convertedToIndex);
 
-  return convertedMessage
+  return convertedMessage;
 }
 
 //listen for shortcut
 app.shortcut(
   'check_timestamps',
   async ({ shortcut, ack, context, payload }) => {
-    let timeMatches
+    let timeMatches;
 
     try {
       // convert Slack's message timestamp to a Date object;
       const messageTime = new Date(
         Number(shortcut.message.ts.split('.')[0]) * 1000
-      )
+      );
 
       // escape the original message to prevent slack ping injection / double pings
-      const originalMessage = escapeMessage(shortcut.message.text)
+      const originalMessage = escapeMessage(shortcut.message.text);
 
       // get timezone matches from within the message
-      timeMatches = chrono.parse(originalMessage, messageTime)
+      timeMatches = chrono.parse(originalMessage, messageTime);
 
       //check for potentially no matches
       if (timeMatches.length === 0) {
@@ -123,23 +123,23 @@ app.shortcut(
           channel: shortcut.channel.id,
           thread_ts: shortcut.message.ts,
           user: shortcut.user.id
-        })
+        });
       }
 
       // Most of the time, a user will not provide a timezone in their message, so we'll hold it to simplify the base case.
       const originalPoster = await app.client.users.info({
         token: process.env.SLACK_OAUTH_TOKEN,
         user: shortcut.message.user
-      })
+      });
 
       // we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
-      const timezoneOffset = originalPoster.user.tz_offset / 60
+      const timezoneOffset = originalPoster.user.tz_offset / 60;
 
       const convertedMessage = localizeMessageTimes(
         originalMessage,
         timeMatches,
         timezoneOffset
-      ).replace(/^|\n/g, '\n>')
+      ).replace(/^|\n/g, '\n>');
 
       //check if shortcut runner is original messager
       if (shortcut.message.user === shortcut.user.id) {
@@ -152,7 +152,7 @@ app.shortcut(
             `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
             convertedMessage +
             '\n\n<https://github.com/lukec11/Jonathan|How does this work?>.'
-        })
+        });
       } else {
         await app.client.views.open({
           // The token you used to initialize your app is stored in the `context` object
@@ -184,11 +184,11 @@ app.shortcut(
               }
             ]
           }
-        })
+        });
       }
       //send response message
     } catch (err) {
-      console.error(err)
+      console.error(err);
 
       Honeybadger.notify(err, {
         context: {
@@ -201,12 +201,14 @@ app.shortcut(
           userId: shortcut.user.id,
           teamId: shortcut.team.id
         }
-      })
+      });
     } finally {
-      await ack() // Acknowledge shortcut request
+      await ack(); // Acknowledge shortcut request
     }
   }
-)(async () => {
-  await app.start(3000)
-  console.log('online')
-})()
+);
+
+(async () => {
+  await app.start(3000);
+  console.log('online');
+})();
