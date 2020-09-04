@@ -12,6 +12,7 @@ Meet Jonathan, the solution to your remote scheduling woes.
 
 ![Jonathan showing a modal](/examples/modal.png)
 ![Jonathan replying in-thread](/examples/reply-ben.png)
+![Jonathan replying in-thread, dark mode](/examples/dark-mode.png)
 
 ## Installation
 
