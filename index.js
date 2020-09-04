@@ -222,6 +222,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
 
 (async () => {
   app.shortcut('check_timestamps', localizeMessageShortcut);
+  app.shortcut('convert_times', localizeMessageShortcut);
 
   await app.start(3000);
   console.log('online');
