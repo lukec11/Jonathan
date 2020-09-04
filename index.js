@@ -116,7 +116,7 @@ app.shortcut("check_timestamps", async ({ shortcut, ack }) => {
 		// Most of the time, a user will not provide a timezone in their message, so we'll hold it to simplify the base case.
 		const originalPoster = await app.client.users.info({
 			token: process.env.SLACK_OAUTH_TOKEN,
-			user: userId
+			user: shortcut.message.user
 		});
 
 		// we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
@@ -126,7 +126,7 @@ app.shortcut("check_timestamps", async ({ shortcut, ack }) => {
 
 		// generate final text to send
 		const message = (
-			`Here is <@${shortcut.message.user}'s> post in your local timezone: \n\n` +
+			`Here is <@${shortcut.message.user}>'s post in your local timezone: \n\n` +
 			">" + convertedMessage.replace(/\n/g, "\n>") +
 			`\n\n(requested by <@${shortcut.user.id}>)`
 		);
