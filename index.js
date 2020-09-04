@@ -117,7 +117,7 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
     if (timeMatches.length === 0) {
       return app.client.chat.postEphemeral({
         token: process.env.SLACK_OAUTH_TOKEN,
-        text: `No timestamps found! If you think this is in error, reach out to <@UE8DH0UHM>.`,
+        text: `I couldn't find a time in the message to convert. If you think this is in error, please <https://github.com/lukec11/Jonathan/issues/new|file an issue>.`,
         channel: shortcut.channel.id,
         thread_ts: shortcut.message.ts,
         user: shortcut.user.id
@@ -141,10 +141,8 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
 
     // generate final text to send
     const message =
-      `Here is <@${shortcut.message.user}>'s post in your local timezone: \n\n` +
-      '>' +
-      convertedMessage.replace(/\n/g, '\n>') +
-      `\n\n(requested by <@${shortcut.user.id}>)`
+      `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
+      convertedMessage.replace(/^|\n/g, '\n>')
 
     //check if shortcut runner is original messager
     if (shortcut.message.user === shortcut.user.id) {
