@@ -122,7 +122,7 @@ app.shortcut("check_timestamps", async ({ shortcut, ack }) => {
 		// we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
 		const timezoneOffset = originalPoster.user.tz_offset / 60;
 
-		const convertedMessage = localizeMessageTimes(shortcut.message.text, timeMatches, timezoneOffset);
+		const convertedMessage = localizeMessageTimes(originalMessage, timeMatches, timezoneOffset);
 
 		// generate final text to send
 		const message = (
