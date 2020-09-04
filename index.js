@@ -22,7 +22,7 @@ function escapeMessage(text) {
     text
       // now, escape all user text according to the guide https://api.slack.com/reference/surfaces/formatting#escaping
       .replace(/&/g, '&amp;')
-      .replace(/<\s*![^>]*)>/g, 'group')
+      .replace(/<\s*![^>]*>/g, 'group')
   );
 }
 
