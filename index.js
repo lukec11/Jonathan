@@ -93,11 +93,33 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
   return convertedMessage;
 }
 
+function badgerError(err) {
+  // Extract details of the error which are not stack or message
+  const { stack, code, message, ...error_details } = err;
+
+  Honeybadger.notify(
+    { stack, code, message },
+    {
+      context: {
+        timeMatches,
+        message: {
+          ts: shortcut.message.ts,
+          text: shortcut.message.text
+        },
+        channelId: shortcut.channel.id,
+        userId: shortcut.user.id,
+        teamId: shortcut.team.id,
+        error_details
+      }
+    }
+  );
+}
 async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
+  await ack(); // Acknowledge shortcut request
   let timeMatches;
 
   try {
-    // convert Slack's message timestamp to a Date object;
+    // convert Slack's message timestamp to a Date object
     const messageTime = new Date(
       Number(shortcut.message.ts.split('.')[0]) * 1000
     );
@@ -150,7 +172,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         blocks.messageModal({
           // The token you used to initialize your app is stored in the `context` object
           token: context.bot_token,
-          trigger_id: trigger_id,
+          trigger_id: payload.trigger_id,
           text: message,
           origuser: shortcut.user.id
         })
@@ -159,28 +181,8 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     //send response message
   } catch (err) {
     console.error(err);
-
-    // Extract details of the error which are not stack or message
-    const { stack, code, message, ...error_details } = err;
-
-    Honeybadger.notify(
-      { stack, code, message },
-      {
-        context: {
-          timeMatches,
-          message: {
-            ts: shortcut.message.ts,
-            text: shortcut.message.text
-          },
-          channelId: shortcut.channel.id,
-          userId: shortcut.user.id,
-          teamId: shortcut.team.id,
-          error_details
-        }
-      }
-    );
+    badgerError(err);
   } finally {
-    await ack(); // Acknowledge shortcut request
   }
 }
 
