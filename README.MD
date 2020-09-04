@@ -10,7 +10,7 @@ Meet Jonathan, the solution to your remote scheduling woes.
 
 ## Demo
 
-![Jonathan in Action](https://imgur.com/6xVFGYW.png)
+![Jonathan in Action](/examples/reply.png)
 
 ## Installation
 
