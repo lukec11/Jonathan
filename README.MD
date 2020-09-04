@@ -5,7 +5,7 @@ Ever tried to schedule a meeting with a distributed team? You've probably notice
 Meet Jonathan, the solution to your remote scheduling woes.
 
 - Send a Slack message in your local timezone
-- Click "Localize Times"
+- Click "Convert timezones"
 - Jonathan will send a reply with all times in the message magically displayed in the reader's timezone.
 
 ## Demo
