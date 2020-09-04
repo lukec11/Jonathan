@@ -180,7 +180,8 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
           text: shortcut.message.text
         },
         channelId: shortcut.channel.id,
-        userId: shortcut.user.id
+        userId: shortcut.user.id,
+        teamId: shortcut.team.id
       }
     })
   } finally {
