@@ -102,9 +102,6 @@ app.shortcut('check_timestamps', async ({ shortcut, ack }) => {
   let timeMatches
 
   try {
-    if (shortcut.message.text == 'Abort, Jonathan.')
-      throw new Error('Was told to abort.')
-
     // convert Slack's message timestamp to a Date object;
     const messageTime = new Date(
       Number(shortcut.message.ts.split('.')[0]) * 1000
