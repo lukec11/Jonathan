@@ -10,9 +10,8 @@ Meet Jonathan, the solution to your remote scheduling woes.
 
 ## Demo
 
-![Jonathan in Action](/examples/reply-cropped.png)
-![](/examples/reply-ben.png)
-![](/examples/modal.png)
+![Jonathan showing a modal](/examples/modal.png)
+![Jonathan replying in-thread](/examples/reply-ben.png)
 
 ## Installation
 
