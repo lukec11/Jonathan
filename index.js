@@ -250,7 +250,6 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
   } catch (err) {
     console.error(err);
     badgerError(err);
-  } finally {
   }
 }
 
