@@ -205,7 +205,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
           blocks.messageModal({
             token: context.bot_token,
             trigger_id: payload.trigger_id,
-            text: message,
+            text: convertedMessage,
             origUser: shortcut.user.id,
             helpText: `Hint: Want others to be able to see this? Invite <@U019XGT657V> to the channel.`
           })
