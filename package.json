@@ -12,8 +12,7 @@
     "@slack/bolt": "^2.3.0",
     "chrono-node": "^2.1.8",
     "dotenv": "^8.2.0",
-    "honeybadger": "^1.4.0",
-    "node-fetch": "^2.6.0"
+    "honeybadger": "^1.4.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
