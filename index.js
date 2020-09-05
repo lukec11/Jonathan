@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { App } = require('@slack/bolt');
 const chrono = require('chrono-node');
+const fetch = require('node-fetch');
 
 const Honeybadger = require('honeybadger').configure({
   apiKey: process.env.HONEYBADGER_API_KEY
@@ -12,6 +13,7 @@ const app = new App({
 });
 
 const blocks = require('./blocks.js');
+const honeybadger = require('honeybadger');
 
 /**
  * Escape Slack message to prevent ping injection and double pings
@@ -26,6 +28,50 @@ function escapeMessage(text) {
       .replace(/&/g, '&amp;')
       .replace(/<\s*![^>]*>/g, 'group')
   );
+}
+
+/**
+ *
+ * @param {String} channelId | ID of channel to check/join
+ * @param {String} token | slack token for which to check channel membership
+ */
+async function checkJoinChannel({ channelId, token }) {
+  try {
+    const res = await app.client.conversations.info({
+      token: token,
+      channel: channelId,
+      include_num_members: false,
+      include_locale: false
+    });
+
+    //check for a bad response & throw it
+    if (!res.ok) {
+      //check if the channel wasn't found
+      if (res.error === 'channel_not_found') {
+        // it couldn't find the channel, so we'll return false
+        // a false return indicates later that it'll send via webhook
+        return false;
+      }
+      // if it isn't returning false, it'll throw an error
+      throw res;
+    }
+
+    if (!res.channel.is_member) {
+      await app.client.conversations.join({
+        channel: channelId,
+        token: token
+      });
+      return true;
+    }
+
+    if (res.channel.is_member) {
+      return true;
+    }
+  } catch {
+    console.error(err);
+    badgerError(err);
+    return false;
+  }
 }
 
 /**
@@ -93,6 +139,10 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
   return convertedMessage;
 }
 
+/**
+ * Send an error to HoneyBadger
+ * @param {Error} err | an error object
+ */
 function badgerError(err) {
   // Extract details of the error which are not stack or message
   const { stack, code, message, ...error_details } = err;
@@ -147,7 +197,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       user: shortcut.message.user
     });
 
-    // we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
+    // we divide by 60 to get the user's timezone offset in minutes, as expected by chrono
     const timezoneOffset = originalPoster.user.tz_offset / 60;
 
     const convertedMessage = localizeMessageTimes(
@@ -156,25 +206,47 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       timezoneOffset
     );
 
+    //check if user is in the channel
+    const inChannel = await checkJoinChannel({
+      channelId: shortcut.channel.id,
+      token: context.bot_token
+    });
+
     //check if shortcut runner is original messager
     if (shortcut.message.user === shortcut.user.id) {
-      //show in thread with full visibility
-      await app.client.chat.postMessage({
-        token: process.env.SLACK_OAUTH_TOKEN,
-        channel: shortcut.channel.id,
-        thread_ts: shortcut.message.ts,
-        text:
-          `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
-          convertedMessage.replace(/^|\n/g, '\n>')
-      });
+      //check if the app is in the channel
+      if (inChannel) {
+        // It's in the channel, so show in thread with full visibility
+        await app.client.chat.postMessage({
+          token: process.env.SLACK_OAUTH_TOKEN,
+          channel: shortcut.channel.id,
+          thread_ts: shortcut.message.ts,
+          text:
+            `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
+            convertedMessage.replace(/^|\n/g, '\n>')
+        });
+      } else {
+        //not in the channel, so we send as a modal
+        await app.client.views.open(
+          blocks.messageModal({
+            token: context.bot_token,
+            trigger_id: payload.trigger_id,
+            text: message,
+            origUser: shortcut.user.id,
+            helpText: `Hint: Want others to be able to see this? Invite <@U019XGT657V> to the channel.`
+          })
+        );
+      }
     } else {
+      // It's not the original user, so we show a modal
       await app.client.views.open(
         blocks.messageModal({
           // The token you used to initialize your app is stored in the `context` object
           token: context.bot_token,
           trigger_id: payload.trigger_id,
           text: message,
-          origuser: shortcut.user.id
+          origUser: shortcut.user.id,
+          helpText: `\n\nBy the way, you should ask <@${shortcut.user.id}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
         })
       );
     }
