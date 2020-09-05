@@ -218,7 +218,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
           // The token you used to initialize your app is stored in the `context` object
           token: context.bot_token,
           trigger_id: payload.trigger_id,
-          text: message,
+          text: convertedMessage,
           origUser: shortcut.user.id,
           helpText: `\n\nBy the way, you should ask <@${shortcut.user.id}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
         })
