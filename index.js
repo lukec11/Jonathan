@@ -65,7 +65,6 @@ async function checkJoinChannel({ channelId, token }) {
     }
   } catch {
     console.error(err);
-    badgerError(err);
     return false;
   }
 }
@@ -139,27 +138,6 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
  * Send an error to HoneyBadger
  * @param {Error} err | an error object
  */
-function badgerError(err) {
-  // Extract details of the error which are not stack or message
-  const { stack, code, message, ...error_details } = err;
-
-  Honeybadger.notify(
-    { stack, code, message },
-    {
-      context: {
-        timeMatches,
-        message: {
-          ts: shortcut.message.ts,
-          text: shortcut.message.text
-        },
-        channelId: shortcut.channel.id,
-        userId: shortcut.user.id,
-        teamId: shortcut.team.id,
-        error_details
-      }
-    }
-  );
-}
 async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
   await ack(); // Acknowledge shortcut request
   let timeMatches;
@@ -249,7 +227,26 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     //send response message
   } catch (err) {
     console.error(err);
-    badgerError(err);
+
+    // Send error to HoneyBadger w/ context
+    const { stack, code, message, ...error_details } = err;
+
+    Honeybadger.notify(
+      { stack, code, message },
+      {
+        context: {
+          timeMatches,
+          message: {
+            ts: shortcut.message.ts,
+            text: shortcut.message.text
+          },
+          channelId: shortcut.channel.id,
+          userId: shortcut.user.id,
+          teamId: shortcut.team.id,
+          error_details
+        }
+      }
+    );
   }
 }
 
