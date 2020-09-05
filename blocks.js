@@ -1,4 +1,4 @@
-export function messageModal({ token, trigger_id, text, origUser }) {
+function messageModal({ token, trigger_id, text, helpText }) {
   return {
     token: token,
     trigger_id: trigger_id,
@@ -32,7 +32,7 @@ export function messageModal({ token, trigger_id, text, origUser }) {
           elements: [
             {
               type: 'mrkdwn',
-              text: `\n\nBy the way, you should ask <@${origUser}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
+              text: helpText
             }
           ]
         }
@@ -40,3 +40,7 @@ export function messageModal({ token, trigger_id, text, origUser }) {
     }
   };
 }
+
+module.exports = {
+  messageModal
+};
