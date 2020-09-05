@@ -54,15 +54,13 @@ async function checkJoinChannel({ channelId, token }) {
       throw res;
     }
 
-    if (!res.channel.is_member) {
+    if (res.channel.is_member) {
+      return true;
+    } else {
       await app.client.conversations.join({
         channel: channelId,
         token: token
       });
-      return true;
-    }
-
-    if (res.channel.is_member) {
       return true;
     }
   } catch {
