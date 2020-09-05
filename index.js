@@ -12,7 +12,6 @@ const app = new App({
 });
 
 const blocks = require('./blocks.js');
-const honeybadger = require('honeybadger');
 
 /**
  * Escape Slack message to prevent ping injection and double pings
