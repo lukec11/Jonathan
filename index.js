@@ -206,7 +206,6 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
             token: context.bot_token,
             trigger_id: payload.trigger_id,
             text: convertedMessage,
-            origUser: shortcut.user.id,
             helpText: `Hint: Want others to be able to see this? Invite <@U019XGT657V> to the channel.`
           })
         );
@@ -219,7 +218,6 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
           token: context.bot_token,
           trigger_id: payload.trigger_id,
           text: convertedMessage,
-          origUser: shortcut.user.id,
           helpText: `\n\nBy the way, you should ask <@${shortcut.user.id}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
         })
       );
