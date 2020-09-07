@@ -63,7 +63,7 @@ async function checkJoinChannel({ channelId, token }) {
       });
       return true;
     }
-  } catch {
+  } catch (err) {
     console.error(err);
     return false;
   }
