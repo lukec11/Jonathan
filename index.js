@@ -203,7 +203,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         //not in the channel, so we send as a modal
         await app.client.views.open(
           blocks.messageModal({
-            token: context.bot_token,
+            token: context.botToken,
             trigger_id: payload.trigger_id,
             text: convertedMessage,
             helpText: `Hint: Want others to be able to see this? Invite <@U019XGT657V> to the channel.`
@@ -215,7 +215,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       await app.client.views.open(
         blocks.messageModal({
           // The token you used to initialize your app is stored in the `context` object
-          token: context.bot_token,
+          token: context.botToken,
           trigger_id: payload.trigger_id,
           text: convertedMessage,
           helpText: `\n\nBy the way, you should ask <@${shortcut.user.id}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
