@@ -1,6 +1,6 @@
 {
-  "name": "jonathan-timezone-robot",
-  "version": "1.1.0",
+  "name": "slack-time-translate",
+  "version": "1.0.0",
   "description": "Translates times in slack with a message shortcut",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,6 @@
     "honeybadger": "^1.4.0"
   },
   "devDependencies": {
-    "eslint": "^7.8.1",
     "nodemon": "^2.0.4"
   }
 }
