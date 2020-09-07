@@ -63,7 +63,7 @@ async function checkJoinChannel({ channelId, token }) {
       });
       return true;
     }
-  } catch (err) {
+  } catch {
     console.error(err);
     return false;
   }
@@ -108,12 +108,7 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
     convertedToIndex = match.index + match.text.length;
 
     // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
-    if (
-      !Object.prototype.hasOwnProperty.call(
-        match.start.impliedValues,
-        'timezoneOffset'
-      )
-    ) {
+    if (!match.start.impliedValues.hasOwnProperty('timezoneOffset')) {
       // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
       match.start.impliedValues.timezoneOffset = timezoneOffset;
     }
@@ -123,15 +118,9 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
 
     if (match.end != null) {
       // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
-      if (
-        !Object.prototype.hasOwnProperty.call(
-          match.end.impliedValues,
-          'timezoneOffset'
-        )
-      ) {
-        if (!Object.prototype.hasOwnProperty.call())
-          // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
-          match.end.impliedValues.timezoneOffset = timezoneOffset;
+      if (!match.end.impliedValues.hasOwnProperty('timezoneOffset')) {
+        // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
+        match.end.impliedValues.timezoneOffset = timezoneOffset;
       }
 
       // insert in the converted message
