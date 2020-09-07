@@ -183,7 +183,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     //check if user is in the channel
     const inChannel = await checkJoinChannel({
       channelId: shortcut.channel.id,
-      token: context.bot_token
+      token: context.botToken
     });
 
     //check if shortcut runner is original messager
