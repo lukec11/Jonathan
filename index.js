@@ -11,6 +11,8 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
+const blocks = require('./blocks.js');
+
 /**
  * Escape Slack message to prevent ping injection and double pings
  *
@@ -24,6 +26,47 @@ function escapeMessage(text) {
       .replace(/&/g, '&amp;')
       .replace(/<\s*![^>]*>/g, 'group')
   );
+}
+
+/**
+ *
+ * @param {String} channelId | ID of channel to check/join
+ * @param {String} token | slack token for which to check channel membership
+ */
+async function checkJoinChannel({ channelId, token }) {
+  try {
+    const res = await app.client.conversations.info({
+      token: token,
+      channel: channelId,
+      include_num_members: false,
+      include_locale: false
+    });
+
+    //check for a bad response & throw it
+    if (!res.ok) {
+      //check if the channel wasn't found
+      if (res.error === 'channel_not_found') {
+        // it couldn't find the channel, so we'll return false
+        // a false return indicates later that it'll send via webhook
+        return false;
+      }
+      // if it isn't returning false, it'll throw an error
+      throw res;
+    }
+
+    if (res.channel.is_member) {
+      return true;
+    } else {
+      await app.client.conversations.join({
+        channel: channelId,
+        token: token
+      });
+      return true;
+    }
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
 }
 
 /**
@@ -65,7 +108,12 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
     convertedToIndex = match.index + match.text.length;
 
     // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
-    if (!match.start.impliedValues.hasOwnProperty('timezoneOffset')) {
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        match.start.impliedValues,
+        'timezoneOffset'
+      )
+    ) {
       // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
       match.start.impliedValues.timezoneOffset = timezoneOffset;
     }
@@ -75,9 +123,15 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
 
     if (match.end != null) {
       // If timezone property isn't implied, we'll imply the timezone set on the user's slack profile
-      if (!match.end.impliedValues.hasOwnProperty('timezoneOffset')) {
-        // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
-        match.end.impliedValues.timezoneOffset = timezoneOffset;
+      if (
+        !Object.prototype.hasOwnProperty.call(
+          match.end.impliedValues,
+          'timezoneOffset'
+        )
+      ) {
+        if (!Object.prototype.hasOwnProperty.call())
+          // Note that we're only implying values, so if chrono is sure that it knows the timezone, chrono will override our hint.
+          match.end.impliedValues.timezoneOffset = timezoneOffset;
       }
 
       // insert in the converted message
@@ -91,16 +145,21 @@ function localizeMessageTimes(originalMessage, timeMatches, timezoneOffset) {
   return convertedMessage;
 }
 
+/**
+ * Send an error to HoneyBadger
+ * @param {Error} err | an error object
+ */
 async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
+  await ack(); // Acknowledge shortcut request
   let timeMatches;
 
   try {
-    // convert Slack's message timestamp to a Date object;
+    // convert Slack's message timestamp to a Date object
     const messageTime = new Date(
       Number(shortcut.message.ts.split('.')[0]) * 1000
     );
 
-    // escape the original message to prevent slack ping injection / double pings
+    // escape the original message to prevent SPI / double mentions for subteams
     const originalMessage = escapeMessage(shortcut.message.text);
 
     // get timezone matches from within the message
@@ -123,7 +182,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       user: shortcut.message.user
     });
 
-    // we devide by 60 to get the user's timezone offset in minutes, as expected by chrono
+    // we divide by 60 to get the user's timezone offset in minutes, as expected by chrono
     const timezoneOffset = originalPoster.user.tz_offset / 60;
 
     const convertedMessage = localizeMessageTimes(
@@ -132,65 +191,55 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       timezoneOffset
     );
 
+    //check if user is in the channel
+    const inChannel = await checkJoinChannel({
+      channelId: shortcut.channel.id,
+      token: context.bot_token
+    });
+
     //check if shortcut runner is original messager
     if (shortcut.message.user === shortcut.user.id) {
-      //show in thread with full visibility
-      await app.client.chat.postMessage({
-        token: process.env.SLACK_OAUTH_TOKEN,
-        channel: shortcut.channel.id,
-        thread_ts: shortcut.message.ts,
-        text:
-          `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
-          convertedMessage.replace(/^|\n/g, '\n>')
-      });
+      //check if the app is in the channel
+      if (inChannel) {
+        // It's in the channel, so show in thread with full visibility
+        await app.client.chat.postMessage({
+          token: process.env.SLACK_OAUTH_TOKEN,
+          channel: shortcut.channel.id,
+          thread_ts: shortcut.message.ts,
+          text:
+            `:sparkles: Here's <@${shortcut.message.user}>'s post in your timezone:\n` +
+            convertedMessage.replace(/^|\n/g, '\n>')
+        });
+      } else {
+        //not in the channel, so we send as a modal
+        await app.client.views.open(
+          blocks.messageModal({
+            token: context.bot_token,
+            trigger_id: payload.trigger_id,
+            text: convertedMessage,
+            origUser: shortcut.user.id,
+            helpText: `Hint: Want others to be able to see this? Invite <@U019XGT657V> to the channel.`
+          })
+        );
+      }
     } else {
-      await app.client.views.open({
-        // The token you used to initialize your app is stored in the `context` object
-        token: context.botToken,
-        trigger_id: payload.trigger_id,
-        view: {
-          type: 'modal',
-          title: {
-            type: 'plain_text',
-            text: 'Jonathan'
-          },
-          blocks: [
-            {
-              type: 'header',
-              text: {
-                type: 'plain_text',
-                text: "Here's that post in your timezone:",
-                emoji: true
-              }
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: convertedMessage
-              }
-            },
-            {
-              type: 'divider'
-            },
-            {
-              type: 'context',
-              elements: [
-                {
-                  type: 'mrkdwn',
-                  text: `\n\nBy the way, you should ask <@${shortcut.message.user}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
-                }
-              ]
-            }
-          ]
-        }
-      });
+      // It's not the original user, so we show a modal
+      await app.client.views.open(
+        blocks.messageModal({
+          // The token you used to initialize your app is stored in the `context` object
+          token: context.bot_token,
+          trigger_id: payload.trigger_id,
+          text: convertedMessage,
+          origUser: shortcut.user.id,
+          helpText: `\n\nBy the way, you should ask <@${shortcut.user.id}> to trigger this on their own message: I'll reply in-thread and magically convert the times for everyone.`
+        })
+      );
     }
     //send response message
   } catch (err) {
     console.error(err);
 
-    // Extract details of the error which are not stack or message
+    // Send error to HoneyBadger w/ context
     const { stack, code, message, ...error_details } = err;
 
     Honeybadger.notify(
@@ -209,8 +258,6 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
         }
       }
     );
-  } finally {
-    await ack(); // Acknowledge shortcut request
   }
 }
 
