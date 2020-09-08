@@ -29,7 +29,7 @@ function escapeMessage(text) {
 }
 
 /**
- *
+ * Checks and potentially joins a public channel, or returns false on private channels
  * @param {String} channelId | ID of channel to check/join
  * @param {String} token | slack token for which to check channel membership
  */
