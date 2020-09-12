@@ -152,7 +152,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     const originalMessage = escapeMessage(shortcut.message.text);
 
     // get timezone matches from within the message
-    timeMatches = chrono.parse(originalMessage, messageTime);
+    timeMatches = chrono.strict.parse(originalMessage, messageTime);
 
     //check for potentially no matches
     if (timeMatches.length === 0) {
