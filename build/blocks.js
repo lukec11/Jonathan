@@ -1,15 +1,15 @@
-"use strict";
+'use strict';
 
-Object.defineProperty(exports, "__esModule", {
+Object.defineProperty(exports, '__esModule', {
   value: true
 });
 exports.messageModal = messageModal;
 
 function messageModal(_ref) {
   var token = _ref.token,
-      trigger_id = _ref.trigger_id,
-      text = _ref.text,
-      helpText = _ref.helpText;
+    trigger_id = _ref.trigger_id,
+    text = _ref.text,
+    helpText = _ref.helpText;
   return {
     token: token,
     trigger_id: trigger_id,
@@ -19,28 +19,35 @@ function messageModal(_ref) {
         type: 'plain_text',
         text: 'Jonathan'
       },
-      blocks: [{
-        type: 'header',
-        text: {
-          type: 'plain_text',
-          text: "Here's that post in your timezone:",
-          emoji: true
+      blocks: [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: "Here's that post in your timezone:",
+            emoji: true
+          }
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: text
+          }
+        },
+        {
+          type: 'divider'
+        },
+        {
+          type: 'context',
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: helpText
+            }
+          ]
         }
-      }, {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: text
-        }
-      }, {
-        type: 'divider'
-      }, {
-        type: 'context',
-        elements: [{
-          type: 'mrkdwn',
-          text: helpText
-        }]
-      }]
+      ]
     }
   };
 }
