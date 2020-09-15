@@ -1,4 +1,4 @@
-function messageModal({ token, trigger_id, text, helpText }) {
+export function messageModal({ token, trigger_id, text, helpText }) {
   return {
     token: token,
     trigger_id: trigger_id,
@@ -40,7 +40,3 @@ function messageModal({ token, trigger_id, text, helpText }) {
     }
   };
 }
-
-module.exports = {
-  messageModal
-};

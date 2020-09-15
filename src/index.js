@@ -1,8 +1,9 @@
-require('dotenv').config();
-const { App } = require('@slack/bolt');
-const chrono = require('chrono-node');
+import * as chrono from 'chrono-node';
+import { App } from '@slack/bolt';
+import 'dotenv/config';
 
-const Honeybadger = require('honeybadger').configure({
+import honeybadger from 'honeybadger';
+const Honeybadger = honeybadger.configure({
   apiKey: process.env.HONEYBADGER_API_KEY
 });
 
@@ -11,7 +12,7 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
-const blocks = require('./blocks.js');
+import { messageModal } from './blocks.js';
 
 /**
  * Escape Slack message to prevent ping injection and double pings
@@ -152,7 +153,17 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     const originalMessage = escapeMessage(shortcut.message.text);
 
     // get timezone matches from within the message
-    timeMatches = chrono.strict.parse(originalMessage, messageTime);
+    timeMatches = chrono.parse(originalMessage, messageTime);
+
+    // Remove time matches which only have dates & not a specific hour, or are too specific (to avoid matching things like "now")
+    for (let i = timeMatches.length - 1; i >= 0; --i) {
+      if (
+        !timeMatches[i].start.knownValues.hasOwnProperty('hour') ||
+        timeMatches[i].start.knownValues.hasOwnProperty('millisecond')
+      ) {
+        timeMatches.splice(i, 1);
+      }
+    }
 
     //check for potentially no matches
     if (timeMatches.length === 0) {
@@ -202,7 +213,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
       } else {
         //not in the channel, so we send as a modal
         await app.client.views.open(
-          blocks.messageModal({
+          messageModal({
             token: context.botToken,
             trigger_id: payload.trigger_id,
             text: convertedMessage,
@@ -213,7 +224,7 @@ async function localizeMessageShortcut({ shortcut, ack, context, payload }) {
     } else {
       // It's not the original user, so we show a modal
       await app.client.views.open(
-        blocks.messageModal({
+        messageModal({
           // The token you used to initialize your app is stored in the `context` object
           token: context.botToken,
           trigger_id: payload.trigger_id,
