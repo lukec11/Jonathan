@@ -13,7 +13,7 @@
   "author": "lukec11 <me@lukec.me>",
   "license": "MIT",
   "dependencies": {
-    "@babel/runtime": "^7.12.1",
+    "@babel/runtime": "^7.18.0",
     "@slack/bolt": "^2.4.1",
     "chrono-node": "^2.1.8",
     "dotenv": "^8.2.0",
